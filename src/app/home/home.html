@@ -1,0 +1,38 @@
+<!-- stars background -->
+<div class="space-bg"><div class="bright-stars"></div></div>
+
+<!-- ambient blobs -->
+<div class="ambient">
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+</div>
+
+<main class="hero">
+  <div class="center-container">
+    <div class="vibrant-orbit"></div>
+    <div class="orbit-ring"></div>
+    <div class="content">
+      <h1>SUPERNOVA</h1>
+      <p>shop here</p>
+      <div class="buttons">
+        <a routerLink="/products" class="btn-primary">Get in touch ↗</a>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer class="bottom-nav">
+  <div class="nav-container">
+    <div class="nav-track" #navTrack>
+      <nav>
+        <a routerLink="/home" class="active">Home</a>
+        <a routerLink="/products">Products</a>
+        <a class="nav-auth-item">{{ authLabel() }}</a>
+        <a routerLink="/rate">Rate</a>
+        <a routerLink="/cart">Cart</a>
+      </nav>
+    </div>
+  </div>
+</footer>
+

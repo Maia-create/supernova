@@ -1,0 +1,149 @@
+<canvas #canvasEl></canvas>
+
+<header class="top-bar">
+  <a (click)="goBack()" class="back-link" style="cursor:pointer">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+    Back
+  </a>
+  <a routerLink="/home" class="wordmark">SUPERNOVA</a>
+  <div class="hdr-right">
+    <a routerLink="/cart" class="icon-btn cart-btn" style="position:relative" #cartBtn>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+      @if (auth.isLoggedIn() && cart.hasItems()) { <span class="hdr-cart-count">{{ cart.label() }}</span> }
+    </a>
+    <a [routerLink]="auth.isLoggedIn() ? '/profile' : '/auth'"
+       [queryParams]="auth.isLoggedIn() ? {} : { returnUrl: currentUrl, backUrl: currentUrl }"
+       class="signin-btn" [class.logged-in]="auth.isLoggedIn()">
+      @if (auth.isLoggedIn() && auth.user()?.avatar) {
+        <img class="nav-avatar" [src]="auth.user()!.avatar" [alt]="auth.userName() ?? ''" />
+      } @else {
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      }
+      <span>{{ auth.isLoggedIn() ? (auth.userName() ?? 'Profile') : 'Sign In' }}</span>
+    </a>
+  </div>
+</header>
+
+@if (loading()) {
+  <div class="loading-center"><div class="orb-spinner"></div></div>
+}
+
+@if (!loading() && product()) {
+  <div class="page-wrap">
+
+    <!-- ── LEFT PANEL: image ── -->
+    <aside class="panel-visual">
+
+      <!-- stock badge -->
+      <div class="float-badge" [class.oos]="product()!.stock <= 0">
+        <span class="badge-dot"></span>
+        <span>{{ product()!.stock > 0 ? 'In Stock · ' + product()!.stock + ' left' : 'Out of Stock' }}</span>
+      </div>
+
+      <!-- main image -->
+      <div class="orb-scene" #orbScene>
+        <div class="img-frame-corner tl"></div>
+        <div class="img-frame-corner tr"></div>
+        <div class="img-frame-corner bl"></div>
+        <div class="img-frame-corner br"></div>
+        <div class="img-scan"></div>
+        <img class="product-main-img" #mainImg
+             [src]="activeImage() || '/placeholder.gif'" (error)="$any($event.target).src='/placeholder.gif'"
+             [alt]="product()!.title" />
+      </div>
+
+      <!-- thumbnails -->
+      <div class="thumbs-row">
+        @for (img of [product()!.thumbnail, ...product()!.images].slice(0,4); track $index; let i = $index) {
+          <div class="thumb" [class.active]="activeThumb() === i" (click)="setThumb(i)">
+            <img [src]="img || '/placeholder.gif'" (error)="$any($event.target).src='/placeholder.gif'" [alt]="product()!.title + ' ' + i" />
+          </div>
+        }
+      </div>
+
+    </aside>
+
+    <!-- ── RIGHT PANEL: info ── -->
+    <section class="panel-info">
+
+      <!-- title only -->
+      <div class="pi pi-0">
+        <h1 class="pname">{{ product()!.title }}</h1>
+      </div>
+
+      <!-- rating + description -->
+      <div class="pi pi-1 detail-stars-row">
+        <div class="detail-stars">
+          @for (filled of starsArray(); track $index) {
+            <span [class.empty]="!filled">{{ filled ? '★' : '☆' }}</span>
+          }
+        </div>
+        <span class="detail-rating">{{ product()!.rating | number:'1.1-1' }} / 5</span>
+      </div>
+
+      <!-- description -->
+      <div class="pi pi-2">
+        <p class="pdesc">{{ product()!.description }}</p>
+      </div>
+
+      <div class="separator pi pi-3"></div>
+
+      <!-- price -->
+      <div class="price-row pi pi-4">
+        <span class="price-big">${{ product()!.price.current | number:'1.2-2' }}</span>
+        @if (product()!.price.beforeDiscount && product()!.price.beforeDiscount! > product()!.price.current) {
+          <span class="price-old">${{ product()!.price.beforeDiscount | number:'1.2-2' }}</span>
+          <span class="discount-pill">
+            -{{ (((product()!.price.beforeDiscount! - product()!.price.current) / product()!.price.beforeDiscount!) * 100) | number:'1.0-0' }}%
+          </span>
+        }
+      </div>
+
+      <!-- info grid -->
+      <div class="meta-tiles pi pi-5">
+        <div class="tile">
+          <span class="tile-k">Brand</span>
+          <span class="tile-v">{{ product()!.brand }}</span>
+        </div>
+        <div class="tile">
+          <span class="tile-k">Category</span>
+          <span class="tile-v">{{ $any(product()!.category)?.name ?? product()!.category }}</span>
+        </div>
+        <div class="tile">
+          <span class="tile-k">In Stock</span>
+          <span class="tile-v" [class.oos-val]="product()!.stock <= 0">
+            {{ product()!.stock }} units{{ product()!.stock <= 0 ? ' · Out of Stock' : '' }}
+          </span>
+        </div>
+        @if (product()!.warranty) {
+          <div class="tile">
+            <span class="tile-k">Warranty</span>
+            <span class="tile-v">{{ product()!.warranty }}</span>
+          </div>
+        }
+        @if (product()!.issueDate) {
+          <div class="tile">
+            <span class="tile-k">Release Date</span>
+            <span class="tile-v">{{ product()!.issueDate | slice:0:10 }}</span>
+          </div>
+        }
+      </div>
+
+      <!-- actions -->
+      <div class="actions pi pi-6">
+        <button class="btn-primary" [disabled]="product()!.stock <= 0" (click)="addToCart()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+          {{ addedToCart() ? 'Added ✓' : product()!.stock <= 0 ? 'Out of Stock' : 'Add to Cart' }}
+        </button>
+        <button class="btn-ghost" (click)="goToRate()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          Rate this
+        </button>
+      </div>
+
+      <p class="delivery pi pi-7">Delivered digitally · 24h after purchase</p>
+
+    </section>
+
+  </div>
+}

@@ -1,0 +1,185 @@
+<div class="space-bg"><div class="bright-stars"></div></div>
+<div class="ambient"><div class="blob b1"></div><div class="blob b2"></div></div>
+
+<button class="back-btn" (click)="goBack()">
+  <span class="back-arrow">←</span>
+  <span class="back-label">Back</span>
+</button>
+
+<div class="auth-wrap">
+  <div class="orbit-scene">
+    <div class="vibrant-orbit"></div>
+    <div class="orbit-ring"></div>
+
+    <div class="card">
+      <div class="card-glow"></div>
+
+      <!-- scroll area -->
+      <div class="form-scroll">
+
+      <!-- tab switcher -->
+      <div class="tabs">
+        <button class="tab" [class.active]="mode() === 'login'"    (click)="mode.set('login')">Sign In</button>
+        <button class="tab" [class.active]="mode() === 'register'" (click)="mode.set('register')">Sign Up</button>
+      </div>
+
+        <!-- ── SIGN IN ── -->
+        @if (mode() === 'login') {
+          <div class="form-block">
+            <h1 class="form-title">Welcome back</h1>
+            <p class="form-sub">sign in to your account</p>
+
+            <div class="field">
+              <label>Email</label>
+              <input type="email" placeholder="you@example.com"
+                     [(ngModel)]="loginEmail" autocomplete="email" />
+            </div>
+            <div class="field">
+              <label>Password</label>
+              <input [type]="showPwd() ? 'text' : 'password'" placeholder="••••••••"
+                     [(ngModel)]="loginPassword" autocomplete="current-password" />
+              <button class="eye-btn" type="button" (click)="showPwd.update(v => !v)">
+                {{ showPwd() ? '○' : '●' }}
+              </button>
+            </div>
+
+            <button class="forgot-link" type="button" (click)="mode.set('recovery')">
+              Forgot password?
+            </button>
+
+            @if (errorMsg()) { <p class="error-msg">{{ errorMsg() }}</p> }
+
+            <button class="btn-submit" [disabled]="loading()" (click)="onSignIn()">
+              @if (loading()) { <span class="spinner"></span> }
+              @else { Sign In }
+            </button>
+          </div>
+        }
+
+        <!-- ── SIGN UP ── -->
+        @if (mode() === 'register') {
+          <div class="form-block">
+            <h1 class="form-title">Create account</h1>
+            <p class="form-sub">join supernova</p>
+
+            <!-- row: first + last -->
+            <div class="row-2">
+              <div class="field">
+                <label>First Name <span class="req">*</span></label>
+                <input type="text" placeholder="John"
+                       [(ngModel)]="regFirst" minlength="2" maxlength="20" />
+              </div>
+              <div class="field">
+                <label>Last Name <span class="req">*</span></label>
+                <input type="text" placeholder="Doe"
+                       [(ngModel)]="regLast" minlength="2" maxlength="20" />
+              </div>
+            </div>
+
+            <!-- email -->
+            <div class="field">
+              <label>Email <span class="req">*</span></label>
+              <input type="email" placeholder="you@example.com" [(ngModel)]="regEmail" />
+            </div>
+
+            <!-- row: password + age -->
+            <div class="row-2">
+              <div class="field">
+                <label>Password <span class="req">*</span></label>
+                <input [type]="showPwd() ? 'text' : 'password'" placeholder="••••••••"
+                       [(ngModel)]="regPassword" minlength="8" maxlength="30" />
+                <button class="eye-btn" type="button" (click)="showPwd.update(v => !v)">
+                  {{ showPwd() ? '○' : '●' }}
+                </button>
+              </div>
+              <div class="field">
+                <label>Age <span class="req">*</span></label>
+                <input type="number" placeholder="25"
+                       [(ngModel)]="regAge" min="1" max="120" />
+              </div>
+            </div>
+
+            <!-- address -->
+            <div class="field">
+              <label>Address <span class="req">*</span></label>
+              <input type="text" placeholder="123 Main St" [(ngModel)]="regAddress" />
+            </div>
+
+            <!-- row: phone + zipcode -->
+            <div class="row-2">
+              <div class="field">
+                <label>Phone <span class="req">*</span></label>
+                <input type="tel" placeholder="+995 5XX XXX XXX" [(ngModel)]="regPhone" />
+              </div>
+              <div class="field">
+                <label>Zip Code <span class="req">*</span></label>
+                <input type="text" placeholder="10001" [(ngModel)]="regZipcode" />
+              </div>
+            </div>
+
+            <!-- row: gender + avatar -->
+            <div class="row-2">
+              <div class="field">
+                <label>Gender <span class="req">*</span></label>
+                <select [(ngModel)]="regGender">
+                  <option value="">— select —</option>
+                  <option value="MALE">Male</option>
+                  <option value="FEMALE">Female</option>
+                  <option value="OTHER">Other</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Avatar URL</label>
+                <input type="url" placeholder="https://…" [(ngModel)]="regAvatar" />
+              </div>
+            </div>
+
+            @if (errorMsg()) { <p class="error-msg">{{ errorMsg() }}</p> }
+
+            <button class="btn-submit" [disabled]="loading()" (click)="onSignUp()">
+              @if (loading()) { <span class="spinner"></span> }
+              @else { Create Account }
+            </button>
+          </div>
+        }
+
+        <!-- ── RECOVERY ── -->
+        @if (mode() === 'recovery') {
+          <div class="form-block">
+            <h1 class="form-title">Reset password</h1>
+            <p class="form-sub">we'll send you a recovery link</p>
+
+            <div class="field">
+              <label>Email</label>
+              <input type="email" placeholder="you@example.com" [(ngModel)]="recoveryEmail" />
+            </div>
+
+            @if (errorMsg()) { <p class="error-msg">{{ errorMsg() }}</p> }
+
+            <button class="btn-submit" [disabled]="loading()" (click)="onRecovery()">
+              @if (loading()) { <span class="spinner"></span> }
+              @else { Send Link }
+            </button>
+
+            <button class="forgot-link" type="button" (click)="mode.set('login')">
+              ← Back to Sign In
+            </button>
+          </div>
+        }
+
+      </div><!-- /form-scroll -->
+    
+<!-- ── Full-screen success overlay ── -->
+@if (successMsg()) {
+  <div class="success-overlay">
+    <div class="success-overlay-icon">✓</div>
+    <h2 class="success-overlay-title">{{ successMsg() }}</h2>
+    <button class="btn-submit" style="margin-top: 28px; width: 200px;" (click)="mode.set('login'); successMsg.set('')">
+      Go to Sign In
+    </button>
+  </div>
+}
+
+</div><!-- /card -->
+  </div><!-- /orbit-scene -->
+</div><!-- /auth-wrap -->

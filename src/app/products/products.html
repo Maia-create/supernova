@@ -1,0 +1,310 @@
+<div class="ambient"><div class="blob blob-1"></div><div class="blob blob-2"></div><div class="blob blob-3"></div></div>
+<div class="space-bg"><div class="bright-stars"></div></div>
+
+<header class="top-nav">
+  <div class="nav-header-inner">
+    <div class="nav-fade-mask">
+      <div class="nav-track" #navTrack>
+        <nav>
+          <a routerLink="/home">Home</a>
+          <a routerLink="/products" class="active">Products</a>
+          <a routerLink="/rate">Rate</a>
+          <a routerLink="/cart">Cart</a>
+        </nav>
+      </div>
+    </div>
+    <div class="nav-actions">
+      <a routerLink="/cart" class="cart-btn" title="Cart" #cartBtn>
+        <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24"
+             fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+        </svg>
+        @if (auth.isLoggedIn() && cart.hasItems()) { <span class="cart-count">{{ cart.label() }}</span> }
+      </a>
+      <a [routerLink]="auth.isLoggedIn() ? '/profile' : '/auth'"
+         [queryParams]="auth.isLoggedIn() ? {} : { returnUrl: currentUrl }"
+         class="signin-btn" [class.logged-in]="auth.isLoggedIn()">
+        @if (auth.isLoggedIn() && auth.user()?.avatar) {
+          <img class="nav-avatar" [src]="auth.user()!.avatar" [alt]="auth.userName() ?? ''" />
+        } @else {
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+               fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+          </svg>
+        }
+        <span>{{ auth.isLoggedIn() ? (auth.userName() ?? 'Profile') : 'Sign In' }}</span>
+      </a>
+    </div>
+  </div>
+</header>
+
+<main class="container">
+  <div class="page-header">
+    <h1 class="page-title">Products</h1>
+    <p class="page-sub">curated collection</p>
+  </div>
+
+  <!-- ── FILTERS ── -->
+  <div class="filters-orbit-wrap">
+    <div class="filters-orbit-ring ring-1"></div>
+    <div class="filters-orbit-ring ring-2"></div>
+  <section class="filters">
+
+    <div class="search-wrap">
+      <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="15" height="15"
+           viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input class="search-input" type="text" placeholder="Search products…"
+             [(ngModel)]="searchModel"
+             (ngModelChange)="onSearch($event)" />
+    </div>
+
+    <div class="filter-row">
+
+      <!-- Category -->
+      <label class="sel-label">
+        <span class="sel-name">Category
+          @if (selectedCatName()) { <span class="filter-chip">{{ selectedCatName() }}</span> }
+        </span>
+        <div class="sel-wrap">
+          <select [ngModel]="selectedCatId()" (ngModelChange)="onCatChange($event)">
+            <option value="">All</option>
+            @for (cat of categories(); track cat.id) {
+              <option [value]="cat.id">{{ cat.name }}</option>
+            }
+          </select>
+          <svg class="sel-arrow" width="10" height="6" viewBox="0 0 10 6">
+            <path d="M1 1l4 4 4-4" stroke="rgba(255,255,255,0.5)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+          </svg>
+        </div>
+      </label>
+
+      <!-- Brand -->
+      <label class="sel-label">
+        <span class="sel-name">Brand
+          @if (selectedBrand()) { <span class="filter-chip">{{ selectedBrand() }}</span> }
+        </span>
+        <div class="sel-wrap">
+          <select [ngModel]="selectedBrand()" (ngModelChange)="onBrandChange($event)">
+            <option value="">All</option>
+            @for (brand of brands(); track brand) {
+              <option [value]="brand">{{ brand }}</option>
+            }
+          </select>
+          <svg class="sel-arrow" width="10" height="6" viewBox="0 0 10 6">
+            <path d="M1 1l4 4 4-4" stroke="rgba(255,255,255,0.5)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+          </svg>
+        </div>
+      </label>
+
+      <!-- Min Price -->
+      <label class="sel-label">
+        <span class="sel-name">Min Price
+          @if (minPrice() !== null) { <span class="filter-chip">${{ minPrice() }}</span> }
+        </span>
+        <div class="price-wrap">
+          <span class="price-sym">$</span>
+          <input class="price-input" type="number" min="0" step="1"
+                 placeholder="0"
+                 [(ngModel)]="minPriceInput"
+                 (blur)="applyMinPrice()"
+                 (keydown.enter)="applyMinPrice()" />
+          @if (minPrice() !== null) {
+            <button class="price-clear" (click)="clearMinPrice()">✕</button>
+          }
+        </div>
+      </label>
+
+      <!-- Max Price -->
+      <label class="sel-label">
+        <span class="sel-name">Max Price
+          @if (maxPrice() !== null) { <span class="filter-chip">${{ maxPrice() }}</span> }
+        </span>
+        <div class="price-wrap">
+          <span class="price-sym">$</span>
+          <input class="price-input" type="number" min="0" step="1"
+                 [placeholder]="lastPriceMax() > 0 ? lastPriceMax().toString() : 'any'"
+                 [(ngModel)]="maxPriceInput"
+                 (blur)="applyMaxPrice()"
+                 (keydown.enter)="applyMaxPrice()" />
+          @if (maxPrice() !== null) {
+            <button class="price-clear" (click)="clearMaxPrice()">✕</button>
+          }
+        </div>
+      </label>
+
+      <!-- Min Rating -->
+      <label class="sel-label">
+        <span class="sel-name">Min Rating
+          @if (minRating() !== null) { <span class="filter-chip">{{ minRating() }}★+</span> }
+        </span>
+        <div class="star-filter">
+          @for (v of [1,2,3,4,5]; track v) {
+            <button class="sf-star"
+                    [class.on]="minRating() !== null && minRating()! >= v"
+                    (click)="onMinRatingChange(v)">★</button>
+          }
+        </div>
+      </label>
+
+      @if (hasActiveFilter()) {
+        <button class="reset-btn" (click)="resetFilters()">✕ Reset</button>
+      }
+
+    </div>
+  </section>
+  </div><!-- /filters-orbit-wrap -->
+
+  <!-- ── SKELETON ── -->
+  @if (loading()) {
+    <div class="product-grid">
+      @for (s of [1,2,3,4,5,6,7,8]; track s) {
+        <div class="product-card skeleton">
+          <div class="card-image skel-block"></div>
+          <div class="skel-line" style="width:42%"></div>
+          <div class="skel-line" style="width:78%"></div>
+          <div class="skel-line short"></div>
+          <div class="card-footer" style="border:none;padding-top:20px">
+            <div class="skel-line" style="width:28%;margin:0"></div>
+            <div class="skel-line" style="width:36%;margin:0;border-radius:6px"></div>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ── PRODUCT GRID ── -->
+  @if (!loading()) {
+    <div class="product-grid">
+      @for (product of filteredProducts(); track $index) {
+        <div class="product-card" [class.oos-card]="isOos(product)" (click)="goToDetails(product)" (mouseenter)="onCardEnter(product)" (mouseleave)="onCardLeave(product)">
+
+          <!-- ── LEFT: image panel ── -->
+          <div class="card-visual">
+
+            <!-- main image -->
+            <div class="card-main-img">
+              <img [src]="activeImg(product)" [alt]="product.title"
+                   loading="eager" (error)="$any($event.target).src='/placeholder.gif'" />
+              @if (getDiscount(product) > 0) {
+                <span class="discount-badge">-{{ getDiscount(product) }}%</span>
+              }
+            </div>
+
+            <!-- thumbnails strip -->
+            @if (cardImages(product).length > 1) {
+              <div class="card-thumbs">
+                @for (img of cardImages(product); track $index; let i = $index) {
+                  <div class="card-thumb"
+                       [class.active]="(thumbMap().get(pid(product)) ?? 0) === i"
+                       (click)="setThumb($event, product, i)">
+                    <img [src]="img" [alt]="product.title + ' ' + i"
+                         (error)="$any($event.target).src='/placeholder.gif'" />
+                  </div>
+                }
+              </div>
+            }
+
+          </div>
+
+          <!-- ── RIGHT: info panel ── -->
+          <div class="card-info">
+            @if (isOos(product)) {
+              <div class="oos-overlay-label"><span>Out of Stock</span></div>
+            }
+
+            <span class="category">{{ catName(product.category) }}</span>
+            <h3>{{ product.title }}</h3>
+
+            <div class="card-stars">
+              @for (filled of starsArray(product.rating); track $index) {
+                <span [class.empty]="!filled">{{ filled ? '★' : '☆' }}</span>
+              }
+              <span class="rating-num">{{ product.rating | number:'1.1-1' }}</span>
+            </div>
+
+            <p>{{ product.description | slice:0:100 }}…</p>
+
+            <div class="card-footer">
+              <div class="price-block">
+                <span class="price">${{ getPrice(product) | number:'1.2-2' }}</span>
+                @if (getOldPrice(product) > getPrice(product)) {
+                  <span class="price-old">${{ getOldPrice(product) | number:'1.2-2' }}</span>
+                }
+              </div>
+              <div class="card-bottom-row">
+                <span class="stock-info"
+                      [class.low]="product.stock > 0 && product.stock <= 5"
+                      [class.oos-text]="product.stock === 0">
+                  @if (product.stock === 0) { Out of Stock }
+                  @else if (product.stock <= 5) { Only {{ product.stock }} left }
+                  @else { {{ product.stock }} in stock }
+                </span>
+                <button class="buy-btn"
+                        [class.added]="isAdded(product)"
+                        [class.oos]="isOos(product)"
+                        [disabled]="isOos(product)"
+                        (click)="addToCart($event, product)">
+                  @if (isAdded(product))    { Added ✓ }
+                  @else if (isOos(product)) { Out of Stock }
+                  @else                     { Add to Cart }
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      }
+
+      @empty {
+        <div class="no-results">
+          <span class="no-results-icon">✦</span>
+          <p>No products match your filters.</p>
+          <button class="reset-btn" (click)="resetFilters()">Clear filters</button>
+        </div>
+      }
+    </div>
+
+    @if (totalPages() > 1 && !hasClientFilter()) {
+      <div class="pagination">
+        <button class="pg-btn" [disabled]="currentPage() === 1" (click)="prevPage()">←</button>
+        @for (p of pageNumbers(); track $index) {
+          @if (p === '...') { <span class="pg-dots">…</span> }
+          @else { <button class="pg-btn" [class.active]="p === currentPage()" (click)="goToPage(p)">{{ p }}</button> }
+        }
+        <button class="pg-btn" [disabled]="currentPage() === totalPages()" (click)="nextPage()">→</button>
+      </div>
+    }
+  }
+</main>
+
+<footer class="main-footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <span class="footer-logo">SUPERNOVA</span>
+      <p class="footer-tagline">shop here</p>
+    </div>
+    <div class="footer-links">
+      <div class="footer-col">
+        <span class="col-title">Navigate</span>
+        <a routerLink="/home">Home</a>
+        <a routerLink="/products">Products</a>
+        <a routerLink="/rate">Rate</a>
+      </div>
+      <div class="footer-col">
+        <span class="col-title">Account</span>
+          @if (auth.isLoggedIn()) {
+            <a (click)="auth.signOut()" style="cursor:pointer">Sign Out</a>
+          } @else {
+            <a [routerLink]="['/auth']" [queryParams]="{ returnUrl: currentUrl }">Sign In</a>
+          }
+        <a routerLink="/cart">Cart</a>
+        <a routerLink="/profile">Profile</a>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom"><p>&copy; 2026 SUPERNOVA. All rights reserved.</p></div>
+</footer>

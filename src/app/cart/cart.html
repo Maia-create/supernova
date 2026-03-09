@@ -1,0 +1,149 @@
+<div class="space-bg"><div class="bright-stars"></div></div>
+<div class="ambient"><div class="blob b1"></div><div class="blob b2"></div></div>
+
+<header class="top-bar">
+  <a (click)="goBack()" class="back-link" style="cursor:pointer">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+    Continue Shopping
+  </a>
+  <a routerLink="/home" class="wordmark">SUPERNOVA</a>
+  <a [routerLink]="auth.isLoggedIn() ? '/profile' : '/auth'"
+     [queryParams]="auth.isLoggedIn() ? {} : { returnUrl: '/cart', backUrl: '/cart' }"
+     class="signin-btn" [class.logged-in]="auth.isLoggedIn()">
+    @if (auth.isLoggedIn() && auth.user()?.avatar) {
+      <img class="nav-avatar" [src]="auth.user()!.avatar" [alt]="auth.userName() ?? ''" />
+    } @else {
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    }
+    <span>{{ auth.isLoggedIn() ? (auth.userName() ?? 'Profile') : 'Sign In' }}</span>
+  </a>
+</header>
+
+<main class="container">
+  <div class="page-header">
+    <h1 class="page-title">Your Cart</h1>
+    <p class="page-sub">{{ cartSvc.count() }} item{{ cartSvc.count() !== 1 ? 's' : '' }}</p>
+  </div>
+
+  <!-- loading -->
+  @if (cartSvc.loading()) {
+    <div class="cart-loading">
+      <div class="mini-spinner"></div>
+    </div>
+  }
+
+  <!-- checkout success -->
+  @if (checkoutSuccess()) {
+    <div class="success-state">
+      <div class="success-icon">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <h2 class="success-title">Order Placed!</h2>
+      <p class="success-sub">thank you for your purchase</p>
+      <a routerLink="/products" class="btn-continue">Browse More Products</a>
+    </div>
+  }
+
+  <!-- empty cart -->
+  @if (!cartSvc.loading() && !checkoutSuccess() && items().length === 0 && !cartSvc.hasItems()) {
+    <div class="empty-state">
+      <div class="empty-orb">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="rgba(199,125,255,0.4)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+      </div>
+      <h2 class="empty-title">Cart is empty</h2>
+      <p class="empty-sub">add some products to get started</p>
+      <a routerLink="/products" class="btn-continue">Browse Products</a>
+    </div>
+  }
+
+  <!-- cart items + summary -->
+  @if (!cartSvc.loading() && !checkoutSuccess() && items().length > 0) {
+    <div class="cart-layout">
+
+      <!-- items list -->
+      <div class="orbit-wrap">
+        <div class="orb-glow" #orbItems></div>
+        <div class="cart-items" #cartItemsEl>
+        @for (item of items(); track item.productId) {
+          <div class="cart-item" [class.item-loading]="item.loading">
+            <div class="item-img">
+              @if (item.product) {
+                <img [src]="item.product.thumbnail" [alt]="item.product.title" (error)="$any($event.target).src='/placeholder.gif'" />
+              } @else {
+                <div class="img-skel"></div>
+              }
+            </div>
+            <div class="item-info">
+              @if (item.product) {
+                <span class="item-cat">{{ item.product.category.name }}</span>
+                <h3 class="item-name">{{ item.product.title }}</h3>
+                <p class="item-brand">{{ item.product.brand }}</p>
+              } @else {
+                <div class="skel-line"></div>
+                <div class="skel-line short"></div>
+              }
+            </div>
+            <div class="item-qty">
+              <button class="qty-btn" (click)="decrease(item.productId)">−</button>
+              <span class="qty-num">{{ item.quantity }}</span>
+              <button class="qty-btn" (click)="increase(item.productId)">+</button>
+            </div>
+            <div class="item-price">
+              @if (item.product) {
+                <span>${{ (item.product.price.current * item.quantity) | number:'1.2-2' }}</span>
+                <span class="unit-price">${{ item.product.price.current | number:'1.2-2' }} each</span>
+              }
+            </div>
+            <button class="remove-btn" (click)="remove(item.productId)" title="Remove">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+        }
+        </div>
+      </div>
+
+      <!-- summary -->
+      <div class="cart-summary">
+        <div class="orbit-wrap">
+          <div class="orb-glow" #orbSummary></div>
+          <div class="summary-card" #summaryCardEl>
+          <div class="summary-glow"></div>
+          <h3 class="summary-title">Order Summary</h3>
+
+          <div class="summary-rows">
+            <div class="summary-row">
+              <span>Items ({{ cartSvc.count() }})</span>
+              <span>${{ cartSvc.total() | number:'1.2-2' }}</span>
+            </div>
+            <div class="summary-row">
+              <span>Shipping</span>
+              <span class="free">Free</span>
+            </div>
+            <div class="summary-divider"></div>
+            <div class="summary-row total-row">
+              <span>Total</span>
+              <span class="total-amount">${{ cartSvc.total() | number:'1.2-2' }}</span>
+            </div>
+          </div>
+
+          <button class="btn-checkout" [disabled]="checkoutLoading()" (click)="onCheckout()">
+            @if (checkoutLoading()) { <span class="spinner"></span> }
+            @else { Checkout → }
+          </button>
+
+          @if (checkoutError()) {
+            <p class="cart-error">{{ checkoutError() }}</p>
+          }
+
+          <button class="btn-clear" (click)="onClear()">Clear cart</button>
+
+          @if (actionError()) {
+            <p class="cart-error">{{ actionError() }}</p>
+          }
+        </div>
+        </div>
+      </div>
+
+    </div>
+  }
+</main>

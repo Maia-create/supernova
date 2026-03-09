@@ -1,0 +1,82 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=Inter:wght@300;400;500&display=swap');
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --purple-deep:  #3a0080;
+  --purple-mid:   #7b2cbf;
+  --purple-light: #c77dff;
+  --blue-glow:    #60cfff;
+  --glow:         rgba(123, 44, 191, 0.6);
+}
+
+html, body {
+  background: #000;
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+  cursor: none;
+  min-height: 100%;
+  max-width: 100%;
+}
+
+html {
+  overflow-x: clip;
+}
+
+/* ── Custom Cursor ─────────────────────── */
+.cursor {
+  position: fixed;
+  width: 10px; height: 10px;
+  background: var(--purple-light);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9999;
+  transform: translate(-50%, -50%);
+  transition: width .2s, height .2s, opacity .2s;
+  mix-blend-mode: screen;
+}
+.cursor-ring {
+  position: fixed;
+  width: 36px; height: 36px;
+  border: 1px solid rgba(199, 125, 255, .4);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9998;
+  transform: translate(-50%, -50%);
+  transition: width .3s, height .3s, opacity .3s;
+}
+
+/* ── Scanline ──────────────────────────── */
+.scanline {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(123,44,191,.6) 40%, rgba(199,125,255,.9) 50%, rgba(123,44,191,.6) 60%, transparent);
+  z-index: 9996;
+  animation: scanline-glow 3s ease-in-out infinite;
+}
+@keyframes scanline-glow { 0%, 100% { opacity: .4; } 50% { opacity: 1; } }
+
+/* ── Noise Overlay ─────────────────────── */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 9995;
+  opacity: .3;
+}
+
+/* ── Shared hidden utility ─────────────── */
+.hidden { display: none !important; }
+
+/* ── Global Responsive Base ─────────────── */
+@media (max-width: 768px) {
+  /* touch screens — disable custom cursor */
+  .cursor, .cursor-ring { display: none; }
+  html, body { cursor: auto; }
+}
+
+@media (max-width: 480px) {
+  html { font-size: 15px; }
+}
